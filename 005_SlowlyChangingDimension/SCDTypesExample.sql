@@ -162,3 +162,27 @@ SELECT Address
 FROM ExampleAddressSCD3
 WHERE Customer = 'Ana'
 AND '2020-07-15' BETWEEN DateFrom AND DateTo;
+
+
+/*
+Bonus tip
+@en: To transform your SCD type 2 to a SCD type 3, you can use the funcion LEAD to get
+	 the next record date and then subtract 1 to get the previous period. If your LEAD
+	 function returns NULL it means that you are on the most current period, so I'm 
+	 setting to a super future date in order to avoid NULLs as a "date to".
+@pt: Para transformar seu SCD tipo 2 em 3, é possível utilizar a função LEAD para retornar
+	 a data do próximo registro, e depois subtrair 1 para pegar o menor período anterior.
+	 Se sua função LEAD retornar NULL significa que você está na data mais atual, então
+	 estou adotando uma data bastante futura para evitar NULLs no campo "Data até".
+*/
+SELECT 	customer,
+		address,
+		updatedate AS datefrom,
+		CASE
+			WHEN LEAD(updatedate) OVER (PARTITION BY customer ORDER BY updatedate) IS NULL 
+				THEN '2099-12-31'
+			ELSE
+				LEAD(updatedate) OVER (PARTITION BY customer ORDER BY updatedate) - 1 
+		END AS dateto,
+		flagcurrent
+FROM ExampleAddressSCD2;
